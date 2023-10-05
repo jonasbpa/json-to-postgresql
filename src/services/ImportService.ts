@@ -10,7 +10,7 @@ export class ImportService {
 
     createTable = async (table: string, columns: Array<Column>) => {
         const query = this.generateTableQuery(table, columns);
-        await fsAsync.writeFile(path.join(__dirname, "../backup/create", `${table}.sql`), query);
+        await fsAsync.writeFile(path.join(__dirname, "../../backup/create", `${table}.sql`), query);
         return this.databaseService.query(query);
     }
 
@@ -18,7 +18,7 @@ export class ImportService {
         const columnNames = columns.map(x => x.key);
         const query = `INSERT INTO ${table}(${columnNames.map(x => `"${x}"`).join(", ")})\n` +
                                 `VALUES ${this.getInsertsFromContent(content, columns)}`;
-        await fsAsync.writeFile(path.join(__dirname, "../backup/insert", `${table}.sql`), query);
+        await fsAsync.writeFile(path.join(__dirname, "../../backup/insert", `${table}.sql`), query);
         return this.databaseService.query(query);
     }
 
@@ -26,11 +26,11 @@ export class ImportService {
         return `CREATE TABLE IF NOT EXISTS ${table} (\n${columns.map(x => x.toString).join(",\n")}\n) USING HEAP;`;
     }
 
-    generateColumns = (content: Array<object>): Array<Column> => {
+    generateColumns = (content: Array<object>, ignores?: Array<string>): Array<Column> => {
         const columns: Array<Column> = [];
 
-        // searches for types in first 150 elements
-        for (let i = 0; i < 150; i++) {
+        // searches for types in ALL elements
+        for (let i = 0; i < content.length; i++) {
             if (!content[i])
                 continue;
 
@@ -41,6 +41,10 @@ export class ImportService {
                 });
                 if (value === null || !value)
                     continue;
+
+                if (ignores?.includes(column.key))
+                    continue;
+
                 if (typeof value === "number") {
                     column.type = "INTEGER";
                 } else if (typeof value === "string") {

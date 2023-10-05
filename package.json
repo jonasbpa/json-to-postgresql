@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "start": "dotenv -e .env -- ts-node -r tsconfig-paths/register src/index.ts",
-        "dev": "dotenv -e .env -- ts-node-dev --inspect --exit-child --respawn --transpile-only -r tsconfig-paths/register src/index.ts | pino-pretty -c",
+        "dev": "dotenv -e .env -- ts-node-dev --inspect --exit-child --respawn --transpile-only -r tsconfig-paths/register src/index.ts",
         "build": "tsc -p . && tsc-alias -p tsconfig.json && cp -R package.json dist"
     },
     "dependencies": {

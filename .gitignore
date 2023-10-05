@@ -10,3 +10,5 @@ todo.txt
 service.sh
 .env
 .env*.local
+backup/*/*.sql
+backup/*.json
