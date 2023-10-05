@@ -7,4 +7,4 @@ Currently, it only supports locally saved .json files, and it's using express re
 Currently planned:
 - Bigint support
 - Console support
-- Different configs (for indexing, skipping columns, specifying types and others)
+- Different configs (for indexing, specifying types and others)
