@@ -12,7 +12,7 @@ export class ImportService {
         const query = this.generateTableQuery(table, columns);
         await fsAsync.writeFile(path.join(__dirname, "../../backup/create", `${table}.sql`), query);
         return this.databaseService.query(query);
-    }
+    };
 
     insertRows = async (table: string, columns: Array<Column>, content: Array<object>) => {
         const columnNames = columns.map(x => x.key);
@@ -20,13 +20,13 @@ export class ImportService {
                                 `VALUES ${this.getInsertsFromContent(content, columns)}`;
         await fsAsync.writeFile(path.join(__dirname, "../../backup/insert", `${table}.sql`), query);
         return this.databaseService.query(query);
-    }
+    };
 
     private generateTableQuery = (table: string, columns: Array<Column>) => {
         return `CREATE TABLE IF NOT EXISTS ${table} (\n${columns.map(x => x.toString).join(",\n")}\n) USING HEAP;`;
-    }
+    };
 
-    generateColumns = (content: Array<object>, ignores?: Array<string>): Array<Column> => {
+    generateColumns = (content: Array<object>, primary?: string | Array<string>, ignores?: Array<string>): Array<Column> => {
         const columns: Array<Column> = [];
 
         // searches for types in ALL elements
@@ -37,6 +37,7 @@ export class ImportService {
             for (const [key, value] of Object.entries(content[i])) {
                 const column = new Column({
                     key,
+                    primary: this.checkColumnPrimary(key, primary),
                     type: "NULL"
                 });
                 if (value === null || !value)
@@ -60,7 +61,7 @@ export class ImportService {
                     column.type = "JSONB";
                 }
                 if (column.type === "NULL")
-                    throw new Error(`NULL TYPE: ${JSON.stringify(content[i])}`)
+                    throw new Error(`NULL TYPE: ${JSON.stringify(content[i])}`);
                 const foundColumn = columns.find(x => x.key == key);
                 if (foundColumn) {
                     if (foundColumn.type === "CHARACTER VARYING" && column.size! > foundColumn.size!) {
@@ -75,13 +76,13 @@ export class ImportService {
         }
 
         return columns;
-    }
+    };
 
     private getInsertsFromContent = (content: any, columns: Array<Column>) => {
         return `${content.map((row: any) =>
             `(${columns.map(x => this.getRowColumnValue(row, x)).join(", ")})`)
             .join(",\n")};`;
-    }
+    };
 
     private getRowColumnValue = (row: any, column: Column) => {
         const stringed = JSON.stringify(row[column.key]);
@@ -99,6 +100,9 @@ export class ImportService {
             case "NULL":
                 throw new Error("NULL COLUMN");
         }
-    }
+    };
 
+    private checkColumnPrimary = (name: string, primary?: string | Array<string>): boolean => {
+        return !!primary && ((typeof primary === "string" && name === primary) || (typeof primary === "object" && primary.includes(name)));
+    };
 }

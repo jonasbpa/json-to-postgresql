@@ -17,9 +17,10 @@ app.post("/", async (req: express.Request, res: express.Response) => {
     const config1: ImportConfig = req.body;
     const content = JSON.parse((await fsAsync.readFile(path.join(__dirname, "../backup/", config1.filePath))).toString());
     const table = config1.filePath.replace(".json", "");
-    const columns = importService.generateColumns(content, config1.ignoreColumns);
+    const columns = importService.generateColumns(content, config1.primaryKey, config1.ignoreColumns);
     await importService.createTable(table, columns);
-    await importService.insertRows(table, columns, content);
+    if (!config1.onlyCreate)
+        await importService.insertRows(table, columns, content);
     res.sendStatus(200);
 });
 
