@@ -14,7 +14,10 @@ export class DatabaseService {
 
     async query(query: string) {
         const client = await this.connection.connect();
-        await client.query(query);
-        client.release();
+        try {
+            return client.query(query);
+        } finally {
+            client.release();
+        }
     }
 }
