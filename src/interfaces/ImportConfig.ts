@@ -1,8 +1,8 @@
 export interface ImportConfig {
     /**
-     * Path of the file to be imported, relative to __dirname.
+     * Path or arrays of paths of the file(s) to be imported, relative to __dirname.
      */
-    filePath: string;
+    filePath: string | Array<string>;
 
     /**
      * Columns to be ignored while creating the table and inserting the values.
