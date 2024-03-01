@@ -8,4 +8,5 @@ Currently, it only supports locally saved .json files, and it's using express re
 Currently planned:
 - Bigint support
 - Console support
-- Different configs (for indexing, specifying types and others)
+- Interactive configuration for fixing or changing types after auto-detection
+- Different configs (for dynamic indexing, specifying types and others)
