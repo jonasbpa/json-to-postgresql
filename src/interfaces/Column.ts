@@ -35,9 +35,7 @@ export class Column {
 	}
 
 	get getSize(): string {
-		return this.type === "CHARACTER VARYING"
-			? `(${this.size ? this.size + 50 : 200})`
-			: "";
+		return this.type === "CHARACTER VARYING" ? `(255)` : "";
 	}
 
 	get getPrimary(): string {
