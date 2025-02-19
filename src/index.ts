@@ -1,20 +1,13 @@
 import "reflect-metadata";
 import { Container } from "typedi";
-import express from "express";
-import config from "@src/config";
 import * as fsAsync from "fs/promises";
 import path from "path";
 import { ImportConfig } from "@src/interfaces/ImportConfig";
 import { ImportService } from "@src/services/ImportService";
 
-const app = express();
-app.set("port", config.port);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.post("/", async (req: express.Request, res: express.Response) => {
+(async () => {
+	const config1 = getConfig();
 	const importService = Container.get(ImportService);
-	const config1: ImportConfig = req.body;
 	if (typeof config1.filePath === "object") {
 		for (const file of config1.filePath) {
 			const content = JSON.parse(
@@ -52,9 +45,44 @@ app.post("/", async (req: express.Request, res: express.Response) => {
 		if (!config1.onlyCreate)
 			await importService.insertRows(table, columns, content);
 	}
-	res.sendStatus(200);
-});
+})();
 
-app.listen(app.get("port"), () =>
-	console.log(`server started on port ${app.get("port")}`)
-);
+function getConfig(): ImportConfig {
+	return {
+		filePath: processArgument("filePath")!,
+		ignoreColumns: processArgument("ignoreColumns"),
+		onlyCreate: processArgument("onlyCreate"),
+		primaryKey: processArgument("primaryKey")
+	};
+}
+
+function processArgument<T extends keyof ImportConfig>(
+	name: T
+): ImportConfig[T] | undefined {
+	if (!name) return undefined;
+	const args = process.execArgv;
+	if (!args?.length) {
+		throw new Error("Not enough arguments");
+	}
+
+	const arg = args
+		.find((x) => x.startsWith(`--${name}=`))
+		?.replace(`--${name}=`, "");
+	if (!arg && name === "filePath") {
+		throw new Error("File path is required");
+	}
+
+	if (!arg) {
+		return undefined;
+	}
+
+	if (name === "onlyCreate") {
+		return (arg === "true") as ImportConfig[T];
+	}
+
+	return (
+		arg.includes(",") || name === "ignoreColumns"
+			? arg.split(",").map((x) => x.trim())
+			: arg
+	) as ImportConfig[T];
+}
