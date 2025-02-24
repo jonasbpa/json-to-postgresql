@@ -1,18 +1,14 @@
 {
     "name": "json-to-postgresql",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "private": false,
     "main": "index.js",
     "scripts": {
-        "start": "dotenv -e .env -- ts-node -r tsconfig-paths/register src/index.ts",
-        "dev": "dotenv -e .env -- ts-node-dev --inspect --exit-child --respawn --transpile-only -r tsconfig-paths/register src/index.ts",
-        "build": "tsc -p . && tsc-alias -p tsconfig.json && cp -R package.json dist"
+        "exec": "ts-node -r tsconfig-paths/register src/index.ts"
     },
     "dependencies": {
-        "dotenv": "^16.3.1",
         "pg": "^8.11.3",
         "reflect-metadata": "^0.1.13",
-        "typedi": "^0.10.0",
         "typescript": "^5.1.6"
     },
     "devDependencies": {
@@ -20,7 +16,6 @@
         "@types/pg": "^8.10.3",
         "@typescript-eslint/eslint-plugin": "^6.21.0",
         "@typescript-eslint/parser": "^6.21.0",
-        "dotenv-cli": "^7.2.1",
         "eslint": "8.42",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-prettier": "^5.2.3",

@@ -1,50 +1,91 @@
-import { Service } from "typedi";
-import { DatabaseService } from "@src/services/DatabaseService";
 import { Column } from "@src/interfaces/Column";
 import fsAsync from "fs/promises";
 import path from "path";
+import { ImportConfig } from "@src/interfaces/ImportConfig";
+import { DatabaseService } from "@src/services/DatabaseService";
 
-@Service()
 export class ImportService {
-	constructor(private readonly databaseService: DatabaseService) {}
+	private readonly databaseService?: DatabaseService;
 
-	createTable = async (table: string, columns: Array<Column>) => {
-		const query = this.generateTableQuery(table, columns);
+	constructor(private readonly config: ImportConfig) {
+		if (config.connString)
+			this.databaseService = new DatabaseService(config.connString);
+	}
+
+	async exec() {
+		for (const file of this.config.filePath) {
+			const content = JSON.parse(
+				(await fsAsync.readFile(path.join(__dirname, file))).toString()
+			);
+			const tableName = file.replace(".json", "");
+			const columns = this.generateColumns(content);
+			if (this.config.action?.startsWith("create")) {
+				await this.createTable(tableName, columns);
+			}
+
+			if (this.config.action?.startsWith("alter")) {
+				await this.alterTable(tableName, columns);
+			}
+
+			if (
+				this.config.action === "insert" ||
+				this.config.action?.endsWith("Insert")
+			) {
+				await this.insertRows(tableName, columns, content);
+			}
+		}
+	}
+
+	private createTable = async (tableName: string, columns: Array<Column>) => {
+		const query = ImportService.createTableQuery(tableName, columns);
 		await fsAsync.writeFile(
-			path.join(__dirname, "../../backup/create", `${table}.sql`),
+			path.join(__dirname, `/queries/create/${tableName}.sql`),
 			query
 		);
-		return this.databaseService.query(query);
+		if (this.databaseService) await this.databaseService.query(query);
 	};
 
-	insertRows = async (
-		table: string,
+	private alterTable = async (tableName: string, columns: Array<Column>) => {
+		const query = ImportService.alterTableQuery(tableName, columns);
+		await fsAsync.writeFile(
+			path.join(__dirname, `/queries/alter/${tableName}.sql`),
+			query
+		);
+		if (this.databaseService) await this.databaseService.query(query);
+	};
+
+	private insertRows = async (
+		tableName: string,
 		columns: Array<Column>,
 		content: Array<object>
 	) => {
 		const columnNames = columns.map((x) => x.key);
 		const query =
-			`INSERT INTO ${table}(${columnNames.map((x) => `"${x}"`).join(", ")})  ` +
-			`VALUES ${this.getInsertsFromContent(content, columns)}`;
+			`INSERT INTO ${tableName}(${columnNames.map((x) => `"${x}"`).join(", ")})  ` +
+			`VALUES ${this.getInsertsFromContent(content, columns)} ` +
+			`ON CONFLICT (${ImportService.getPrimaryKeysNames(columns)}) ` +
+			(this.config.shouldReplace
+				? `DO UPDATE SET ` + ImportService.getReplacers(columns)
+				: "DO NOTHING");
 		await fsAsync.writeFile(
-			path.join(__dirname, "../../backup/insert", `${table}.sql`),
+			path.join(__dirname, `/queries/insert/${tableName}.sql`),
 			query
 		);
-		return this.databaseService.query(query);
+		if (this.databaseService) await this.databaseService.query(query);
 	};
 
-	private generateTableQuery = (table: string, columns: Array<Column>) => {
-		return `CREATE TABLE IF NOT EXISTS ${table}
+	static createTableQuery = (tableName: string, columns: Array<Column>) => {
+		return `CREATE TABLE IF NOT EXISTS ${tableName}
                 (
-                    ${columns.map((x) => x.toString).join(",\n")}
+                    ${columns.map((x) => x.getCreateString).join(",\n")}
                 ) USING HEAP;`;
 	};
 
-	generateColumns = (
-		content: Array<object>,
-		primary?: string | Array<string>,
-		ignores?: Array<string>
-	): Array<Column> => {
+	static alterTableQuery = (tableName: string, columns: Array<Column>) => {
+		return `ALTER TABLE IF EXISTS ${tableName} ${columns.map((x) => x.getReplaceString).join(",\n")};`;
+	};
+
+	private generateColumns = (content: Array<object>): Array<Column> => {
 		const columns: Array<Column> = [];
 
 		// searches for types in ALL elements
@@ -54,12 +95,12 @@ export class ImportService {
 			for (const [key, value] of Object.entries(content[i])) {
 				const column = new Column({
 					key,
-					primary: this.checkColumnPrimary(key, primary),
+					primary: this.checkColumnPrimary(key),
 					type: "NULL"
 				});
 				if (value === null || !value) continue;
 
-				if (ignores?.includes(column.key)) continue;
+				if (this.config.ignoreColumns?.includes(column.key)) continue;
 
 				if (typeof value === "number") {
 					column.type = "INTEGER";
@@ -106,12 +147,24 @@ export class ImportService {
 		return `${content
 			.map(
 				(row: any) =>
-					`(${columns.map((x) => this.getRowColumnValue(row, x)).join(", ")})`
+					`(${columns.map((x) => ImportService.getRowColumnValue(row, x)).join(", ")})`
 			)
 			.join(",\n")};`;
 	};
 
-	private getRowColumnValue = (row: any, column: Column) => {
+	static getReplacers = (columns: Array<Column>) =>
+		columns
+			.filter((x) => !x.primary)
+			.map((x) => `"${x.key}" = EXCLUDED."${x.key}"`)
+			.join(", ");
+
+	static getPrimaryKeysNames = (columns: Array<Column>) =>
+		columns
+			.filter((x) => x.primary)
+			.map((x) => `"${x.key}"`)
+			.join(", ");
+
+	static getRowColumnValue = (row: any, column: Column) => {
 		const stringed = JSON.stringify(row[column.key]);
 		if (stringed === "null") return stringed;
 		switch (column.type) {
@@ -128,14 +181,6 @@ export class ImportService {
 		}
 	};
 
-	private checkColumnPrimary = (
-		name: string,
-		primary?: string | Array<string>
-	): boolean => {
-		return (
-			!!primary &&
-			((typeof primary === "string" && name === primary) ||
-				(typeof primary === "object" && primary.includes(name)))
-		);
-	};
+	private checkColumnPrimary = (columnName: string): boolean =>
+		this.config.primaryKey === columnName;
 }

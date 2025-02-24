@@ -1,14 +1,11 @@
-import config from "@src/config";
 import { Pool } from "pg";
-import { Service } from "typedi";
 
-@Service()
 export class DatabaseService {
 	private readonly connection: Pool;
 
-	constructor() {
+	constructor(connString: string) {
 		this.connection = new Pool({
-			connectionString: config.connection_string
+			connectionString: connString
 		});
 	}
 

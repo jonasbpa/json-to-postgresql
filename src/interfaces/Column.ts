@@ -30,8 +30,12 @@ export class Column {
 	size?: number;
 	primary?: boolean;
 
-	get toString(): string {
+	get getCreateString(): string {
 		return `"${this.key}" ${this.type}${this.getSize}${this.getPrimary}`;
+	}
+
+	get getReplaceString(): string {
+		return `ALTER COLUMN "${this.key}" TYPE ${this.type}${this.getSize};`;
 	}
 
 	get getSize(): string {
