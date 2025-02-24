@@ -49,10 +49,11 @@ export type ImportConfig = {
 	shouldReplace?: boolean;
 
 	/**
-	 * Defines the columns that are supposed to be set as primary keys in the table.
-	 * Usage: --primaryKey=id,userId
+	 * Defines the column that is supposed to be set as primary key in the table.
+	 * Usage: --primaryKey=id
+	 * Default: id
 	 */
-	primaryKey?: Array<string>;
+	primaryKey?: string;
 
 	/**
 	 * Should only use this if you want to execute the queries automatically into the database you wish.
