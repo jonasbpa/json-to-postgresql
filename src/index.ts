@@ -1,50 +1,30 @@
 import "reflect-metadata";
-import { ImportConfig } from "@src/interfaces/ImportConfig";
-import { ImportService } from "@src/services/ImportService";
+import { ImportConfig } from "./types/ImportConfig";
+import { ImportService } from "./services/ImportService";
+import { Command } from "@commander-js/extra-typings";
 
-(async () => {
-	const importService = new ImportService(getConfig());
-	await importService.exec();
-})();
+const program = new Command()
+	.option("-r, --replace")
+	.option("-a, --action <string>")
+	.option("-i, --ignore <string>")
+	.option("-p, --primary <string>")
+	.option("-c, --connection <string>")
+	.argument("<string...>")
+	.parse();
+const options = program.opts();
 
-function getConfig(): ImportConfig {
-	return {
-		filePath: processArgument("filePath")!,
-		ignoreColumns: processArgument("ignoreColumns"),
-		action: processArgument("action"),
-		shouldReplace: processArgument("shouldReplace"),
-		primaryKey: processArgument("primaryKey"),
-		connString: processArgument("connString")
-	};
-}
+const config: ImportConfig = {
+	filePath: program.args,
+	ignoreColumns: listToArray(options.ignore),
+	action: (options.action as ImportConfig["action"]) || "createAndInsert",
+	shouldReplace: options.replace,
+	primaryKey: options.primary || "id",
+	connString: options.connection
+};
 
-function processArgument<T extends keyof ImportConfig>(
-	name: T
-): ImportConfig[T] | undefined {
-	if (!name) return undefined;
-	const args = process.execArgv;
-	if (!args?.length) {
-		throw new Error("Not enough arguments");
-	}
+const importService = new ImportService(config);
+importService.exec().then(() => console.log("Success!"));
 
-	const arg = args
-		.find((x) => x.startsWith(`--${name}=`))
-		?.replace(`--${name}=`, "");
-	if (!arg && name === "filePath") {
-		throw new Error("File path is required");
-	}
-
-	if (!arg) {
-		return undefined;
-	}
-
-	if (name === "shouldReplace") {
-		return (arg === "true") as ImportConfig[T];
-	}
-
-	if (name === "primaryKey") {
-		return arg as ImportConfig[T];
-	}
-
-	return arg.split(",").map((x) => x.trim()) as ImportConfig[T];
+function listToArray(list?: string): string[] | undefined {
+	return list?.split(",")?.map((x) => x.trim());
 }

@@ -1,8 +1,8 @@
-import { Column } from "@src/interfaces/Column";
+import { Column } from "../types/Column";
 import fsAsync from "fs/promises";
 import path from "path";
-import { ImportConfig } from "@src/interfaces/ImportConfig";
-import { DatabaseService } from "@src/services/DatabaseService";
+import { ImportConfig } from "../types/ImportConfig";
+import { DatabaseService } from "./DatabaseService";
 
 export class ImportService {
 	private readonly databaseService?: DatabaseService;
@@ -15,9 +15,15 @@ export class ImportService {
 	async exec() {
 		for (const file of this.config.filePath) {
 			const content = JSON.parse(
-				(await fsAsync.readFile(path.join(__dirname, file))).toString()
+				(
+					await fsAsync.readFile(path.join(__dirname, "../../", file))
+				).toString()
 			);
-			const tableName = file.replace(".json", "");
+			const fileSplit = file.split("/");
+			const tableName = fileSplit[fileSplit.length - 1].replace(
+				".json",
+				""
+			);
 			const columns = this.generateColumns(content);
 			if (this.config.action?.startsWith("create")) {
 				await this.createTable(tableName, columns);
@@ -39,7 +45,7 @@ export class ImportService {
 	private createTable = async (tableName: string, columns: Array<Column>) => {
 		const query = ImportService.createTableQuery(tableName, columns);
 		await fsAsync.writeFile(
-			path.join(__dirname, `/queries/create/${tableName}.sql`),
+			path.join(__dirname, `../../queries/create/${tableName}.sql`),
 			query
 		);
 		if (this.databaseService) await this.databaseService.query(query);
@@ -48,7 +54,7 @@ export class ImportService {
 	private alterTable = async (tableName: string, columns: Array<Column>) => {
 		const query = ImportService.alterTableQuery(tableName, columns);
 		await fsAsync.writeFile(
-			path.join(__dirname, `/queries/alter/${tableName}.sql`),
+			path.join(__dirname, `../../queries/alter/${tableName}.sql`),
 			query
 		);
 		if (this.databaseService) await this.databaseService.query(query);
@@ -62,13 +68,14 @@ export class ImportService {
 		const columnNames = columns.map((x) => x.key);
 		const query =
 			`INSERT INTO ${tableName}(${columnNames.map((x) => `"${x}"`).join(", ")})  ` +
-			`VALUES ${this.getInsertsFromContent(content, columns)} ` +
+			`VALUES ${this.getInsertsFromContent(content, columns)}\n` +
 			`ON CONFLICT (${ImportService.getPrimaryKeysNames(columns)}) ` +
 			(this.config.shouldReplace
 				? `DO UPDATE SET ` + ImportService.getReplacers(columns)
-				: "DO NOTHING");
+				: "DO NOTHING") +
+			`;`;
 		await fsAsync.writeFile(
-			path.join(__dirname, `/queries/insert/${tableName}.sql`),
+			path.join(__dirname, `../../queries/insert/${tableName}.sql`),
 			query
 		);
 		if (this.databaseService) await this.databaseService.query(query);
@@ -149,7 +156,7 @@ export class ImportService {
 				(row: any) =>
 					`(${columns.map((x) => ImportService.getRowColumnValue(row, x)).join(", ")})`
 			)
-			.join(",\n")};`;
+			.join(",\n")}`;
 	};
 
 	static getReplacers = (columns: Array<Column>) =>

@@ -3,12 +3,9 @@ node_modules/
 .vscode/
 .history/
 coverage/
-webhookmodels.txt
-*_old.*
 .idea
-todo.txt
-service.sh
 .env
 .env*.local
-backup/*/*.sql
-backup/*.json
+collections/*.json
+queries/**/*.sql
+dist
