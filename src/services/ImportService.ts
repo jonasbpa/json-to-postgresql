@@ -37,7 +37,12 @@ export class ImportService {
 				this.config.action === "insert" ||
 				this.config.action?.endsWith("Insert")
 			) {
-				await this.insertRows(tableName, columns, content);
+				// limit insert queries to 10k entries at a time
+				const chunkSize = 10_000;
+				for (let i = 0; i < content.length; i += chunkSize) {
+					const chunk = content.slice(i, i + chunkSize);
+					await this.insertRows(tableName, columns, chunk);
+				}
 			}
 		}
 	}
