@@ -1,12 +1,6 @@
 export interface IColumn {
 	key: string;
-	type:
-		| "NULL"
-		| "INTEGER"
-		| "CHARACTER VARYING"
-		| "BOOLEAN"
-		| "JSONB"
-		| "TIMESTAMPTZ";
+	type: "NULL" | "INTEGER" | "TEXT" | "BOOLEAN" | "JSONB" | "TIMESTAMPTZ";
 	size?: number;
 	primary?: boolean;
 }
@@ -20,26 +14,16 @@ export class Column {
 	}
 
 	key: string;
-	type:
-		| "NULL"
-		| "INTEGER"
-		| "CHARACTER VARYING"
-		| "BOOLEAN"
-		| "JSONB"
-		| "TIMESTAMPTZ";
+	type: "NULL" | "INTEGER" | "TEXT" | "BOOLEAN" | "JSONB" | "TIMESTAMPTZ";
 	size?: number;
 	primary?: boolean;
 
 	get getCreateString(): string {
-		return `"${this.key}" ${this.type}${this.getSize}${this.getPrimary}`;
+		return `"${this.key}" ${this.type}${this.getPrimary}`;
 	}
 
 	get getReplaceString(): string {
-		return `ALTER COLUMN "${this.key}" TYPE ${this.type}${this.getSize}`;
-	}
-
-	get getSize(): string {
-		return this.type === "CHARACTER VARYING" ? `(255)` : "";
+		return `ALTER COLUMN "${this.key}" TYPE ${this.type}`;
 	}
 
 	get getPrimary(): string {

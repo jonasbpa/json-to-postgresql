@@ -117,7 +117,7 @@ export class ImportService {
 							/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z?$/
 						).test(value)
 					) {
-						column.type = "CHARACTER VARYING";
+						column.type = "TEXT";
 						column.size = value.length;
 					} else {
 						column.type = "TIMESTAMPTZ";
@@ -132,7 +132,7 @@ export class ImportService {
 				const foundColumn = columns.find((x) => x.key == key);
 				if (foundColumn) {
 					if (
-						foundColumn.type === "CHARACTER VARYING" &&
+						foundColumn.type === "TEXT" &&
 						column.size! > foundColumn.size!
 					) {
 						foundColumn.size = column.size;
@@ -179,7 +179,7 @@ export class ImportService {
 			case "BOOLEAN":
 			case "TIMESTAMPTZ":
 				return stringed.replace(/"/g, "'");
-			case "CHARACTER VARYING":
+			case "TEXT":
 				return `E${stringed.replace(/'/g, "\\'").replace(/"/g, "'")}`;
 			case "JSONB":
 				return `'${stringed}'`;
