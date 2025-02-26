@@ -70,6 +70,7 @@ export type ImportConfig = {
 
 ## Planned
 Currently planned:
+- Allow usage of directories instead of having to point out every JSON file
 - Auto-detection of table structure and constraints when altering or inserting without creating
 - Bigint support
 - Interactive configuration for fixing or changing types after auto-detection
