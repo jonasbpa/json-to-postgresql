@@ -1,17 +1,37 @@
 # json-to-postgresql
 
 ## About
-A simple application that generates queries for importing JSON collections into PostgreSQL.<br />
+A simple Bun application that generates queries for importing JSON collections into PostgreSQL.<br />
 It auto-detects column names, column types, creates the table and inserts the data into the table.
 
 Only supports locally saved .json files.<br />
 Currently supported actions: `create, alter, insert, createAndInsert, alterAndInsert`
 
 ## Usage
-Should be called from CLI, using arguments and flags to tell the application what to do.<br />
-`node -r ts-node/register src/index.ts [-a action] [-r] [-i column] [-p column] [-c connection] ...COLLECTIONS`
+### Quickstart
+First, you need to have at least one package manager installed in your machine.
+- [bun](https://bun.sh/) (preferably)
+- [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+- [yarn](https://classic.yarnpkg.com/lang/en/docs/install)
 
-Always refer to type `ImportConfig` to understand how to use flags correctly.<br />
+After making sure you have at least one installed and cloning the project, you should now download all the required dependencies using one of the below commands (according to the one you have installed), in the project's main directory.
+```Bash
+# If you have Bun installed
+bun install
+# If you have NPM installed
+npm install
+# If you have Yarn installed
+yarn install
+```
+
+After downloading the dependencies, you're now ready to run the project.<br />
+Execute the below command in the project's main directory, changing the flags and arguments to match your needs.
+```Bash
+# Flags and arguments are used so the application knows what to do correctly
+bun start [-a action] [-r] [-i column] [-p column] [-c connection] ...COLLECTIONS
+```
+
+### Flags
 ```Typescript
 export type ImportConfig = {
 	/**
@@ -69,11 +89,10 @@ export type ImportConfig = {
 ```
 
 ## Planned
-Currently planned:
-- Allow usage of directories instead of having to point out every JSON file
-- Auto-detection of table structure and constraints when altering or inserting without creating
+- Allow usage of directories instead of having to point out every JSON file (also usage of wildcards)
+- Auto-detection of Postgres table structure and constraints when not creating the table
+- Interactive config for confirming or changing types after JSON auto-detection
 - Bigint support
-- Interactive configuration for fixing or changing types after auto-detection
-- Different configs (for dynamic indexing, specifying types and others)
-- GUI
-- NPM package & NPX usage
+- More flags (dynamic indexing, specifying types, etc.)
+- npm package & npx/bunx usage
+- GUI (maybe?)

@@ -1,8 +1,7 @@
-import { Column } from "../types/Column";
-import fsAsync from "fs/promises";
 import path from "path";
-import { ImportConfig } from "../types/ImportConfig";
-import { DatabaseService } from "./DatabaseService";
+import { Column } from "@src/types/Column";
+import { ImportConfig } from "@src/types/ImportConfig";
+import { DatabaseService } from "@src/services/DatabaseService";
 
 export class ImportService {
 	private readonly databaseService?: DatabaseService;
@@ -14,11 +13,9 @@ export class ImportService {
 
 	async exec() {
 		for (const file of this.config.filePath) {
-			const content = JSON.parse(
-				(
-					await fsAsync.readFile(path.join(__dirname, "../../", file))
-				).toString()
-			);
+			const content = await Bun.file(
+				path.join(__dirname, "../../", file)
+			).json();
 			const fileSplit = file.split("/");
 			const tableName = fileSplit[fileSplit.length - 1].replace(
 				".json",
@@ -49,7 +46,7 @@ export class ImportService {
 
 	private createTable = async (tableName: string, columns: Array<Column>) => {
 		const query = ImportService.createTableQuery(tableName, columns);
-		await fsAsync.writeFile(
+		await Bun.write(
 			path.join(__dirname, `../../queries/create/${tableName}.sql`),
 			query
 		);
@@ -58,7 +55,7 @@ export class ImportService {
 
 	private alterTable = async (tableName: string, columns: Array<Column>) => {
 		const query = ImportService.alterTableQuery(tableName, columns);
-		await fsAsync.writeFile(
+		await Bun.write(
 			path.join(__dirname, `../../queries/alter/${tableName}.sql`),
 			query
 		);
@@ -79,7 +76,7 @@ export class ImportService {
 				? `DO UPDATE SET ` + ImportService.getReplacers(columns)
 				: "DO NOTHING") +
 			`;`;
-		await fsAsync.writeFile(
+		await Bun.write(
 			path.join(__dirname, `../../queries/insert/${tableName}.sql`),
 			query
 		);
@@ -94,7 +91,7 @@ export class ImportService {
 	};
 
 	static alterTableQuery = (tableName: string, columns: Array<Column>) => {
-		return `ALTER TABLE IF EXISTS ${tableName}\n${columns.map((x) => x.getReplaceString).join(",\n")};`;
+		return `ALTER TABLE IF EXISTS ${tableName} ${columns.map((x) => x.getReplaceString).join(",\n")};`;
 	};
 
 	private generateColumns = (content: Array<object>): Array<Column> => {

@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import { ImportConfig } from "./types/ImportConfig";
-import { ImportService } from "./services/ImportService";
+import { ImportConfig } from "@src/types/ImportConfig";
+import { ImportService } from "@src/services/ImportService";
 import { Command } from "@commander-js/extra-typings";
 
 const program = new Command()
