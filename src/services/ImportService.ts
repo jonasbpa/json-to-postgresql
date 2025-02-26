@@ -89,7 +89,7 @@ export class ImportService {
 	};
 
 	static alterTableQuery = (tableName: string, columns: Array<Column>) => {
-		return `ALTER TABLE IF EXISTS ${tableName} ${columns.map((x) => x.getReplaceString).join(",\n")};`;
+		return `ALTER TABLE IF EXISTS ${tableName}\n${columns.map((x) => x.getReplaceString).join(",\n")};`;
 	};
 
 	private generateColumns = (content: Array<object>): Array<Column> => {
