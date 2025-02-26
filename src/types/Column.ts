@@ -35,7 +35,7 @@ export class Column {
 	}
 
 	get getReplaceString(): string {
-		return `ALTER COLUMN "${this.key}" TYPE ${this.type}${this.getSize};`;
+		return `ALTER COLUMN "${this.key}" TYPE ${this.type}${this.getSize}`;
 	}
 
 	get getSize(): string {
